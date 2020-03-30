@@ -1,16 +1,19 @@
-import telebot
-from telebot.types import InlineKeyboardMarkup
-from telebot.types import InlineKeyboardButton
-from telebot.types import ReplyKeyboardMarkup
-from telebot.types import ReplyKeyboardRemove
-from telebot.types import KeyboardButton
-import database as db
-from enum import IntEnum
-import localizationdic as ld
-from datetime import datetime
-from datetime import timedelta
-import time
 import threading
+import time
+from datetime import datetime, timedelta
+from enum import IntEnum
+
+import database as db
+import localizationdic as ld
+import telebot
+from telebot.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+)
+
 
 class RequestSteps(IntEnum):
     Start = 0
@@ -23,16 +26,18 @@ class RequestSteps(IntEnum):
     ChangeCurrency = 7
     ChangeQuantity = 8
     ChangeFeeType = 9
-    ChangeFee = 10    
+    ChangeFee = 10
     ChangeBank = 11
     ChangeEndDate = 12
     VoteUser = 13
     UnvoteUser = 14
 
+
 class FeeTypes(IntEnum):
     Nobody = 0
     Seller = 1
     Buyer = 2
+
 
 class UserRequestProcess:
     __reqType: db.RequestType
@@ -72,14 +77,46 @@ class UserRequestProcess:
         self.__deleteAllReqKeyboard()
         isNotifEnabled = self.__db.IsNotificationsRowExistForUser(self.username)
         keyboard = InlineKeyboardMarkup(row_width=5)
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.BuyKey), callback_data=ld.BuyKey), InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SellKey), callback_data=ld.SellKey))
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.ShowMyReqKey), callback_data=ld.ShowMyReqKey), InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.ShowAllReqKey), callback_data=ld.ShowAllReqKey))
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.VoteKey), callback_data=ld.VoteKey), InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.UnvoteKey), callback_data=ld.UnvoteKey), InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.EscrowListKey), callback_data=ld.EscrowListKey))
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.BuyKey), callback_data=ld.BuyKey),
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SellKey), callback_data=ld.SellKey),
+        )
+        keyboard.row(
+            InlineKeyboardButton(
+                ld.get_translate(self.__db, self.username, ld.ShowMyReqKey), callback_data=ld.ShowMyReqKey
+            ),
+            InlineKeyboardButton(
+                ld.get_translate(self.__db, self.username, ld.ShowAllReqKey), callback_data=ld.ShowAllReqKey
+            ),
+        )
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.VoteKey), callback_data=ld.VoteKey),
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.UnvoteKey), callback_data=ld.UnvoteKey),
+            InlineKeyboardButton(
+                ld.get_translate(self.__db, self.username, ld.EscrowListKey), callback_data=ld.EscrowListKey
+            ),
+        )
         btnCallbackData = ld.DisableNotifKey if isNotifEnabled else ld.EnableNotifKey
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, btnCallbackData), callback_data=btnCallbackData))
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.EnglishKey), callback_data=ld.EnglishKey), InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.RussianKey), callback_data=ld.RussianKey))
+        keyboard.row(
+            InlineKeyboardButton(
+                ld.get_translate(self.__db, self.username, btnCallbackData), callback_data=btnCallbackData
+            )
+        )
+        keyboard.row(
+            InlineKeyboardButton(
+                ld.get_translate(self.__db, self.username, ld.EnglishKey), callback_data=ld.EnglishKey
+            ),
+            InlineKeyboardButton(
+                ld.get_translate(self.__db, self.username, ld.RussianKey), callback_data=ld.RussianKey
+            ),
+        )
         self.__deleteStartMessage()
-        reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.StartMessageKey), parse_mode="HTML", reply_markup=keyboard)
+        reply = self.__bot.send_message(
+            self.__chatId,
+            ld.get_translate(self.__db, self.username, ld.StartMessageKey),
+            parse_mode="HTML",
+            reply_markup=keyboard,
+        )
         self.__startMsgId = reply.message_id
 
     def ProcessMessage(self, msg):
@@ -98,7 +135,7 @@ class UserRequestProcess:
             RequestSteps.ChangeBank: self.__ProcessChangeBank,
             RequestSteps.ChangeEndDate: self.__ProcessChangeEndDate,
             RequestSteps.VoteUser: self.__ProcessVote,
-            RequestSteps.UnvoteUser: self.__ProcessUnvote
+            RequestSteps.UnvoteUser: self.__ProcessUnvote,
         }
 
         handler = switcher[self.currentStep]
@@ -114,7 +151,12 @@ class UserRequestProcess:
             self.__deleteStartMessage()
             assets = self.__db.GetAssetsList()
             keyboard = self.__GetMarkupForAssetList(assets)
-            reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.SellingMsgKey), parse_mode="HTML", reply_markup=keyboard)
+            reply = self.__bot.send_message(
+                self.__chatId,
+                ld.get_translate(self.__db, self.username, ld.SellingMsgKey),
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
             self.__processMsgId = reply.message_id
         elif msg == ld.BuyKey:
             print(self.username + " Buy")
@@ -124,7 +166,12 @@ class UserRequestProcess:
             self.__deleteStartMessage()
             assets = self.__db.GetAssetsList()
             keyboard = self.__GetMarkupForAssetList(assets)
-            reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.BuyingMsgKey), parse_mode="HTML", reply_markup=keyboard)
+            reply = self.__bot.send_message(
+                self.__chatId,
+                ld.get_translate(self.__db, self.username, ld.BuyingMsgKey),
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
             self.__processMsgId = reply.message_id
         elif ld.RemoveKey in msg:
             parseResult = self.__ParseReqId(msg)
@@ -134,7 +181,10 @@ class UserRequestProcess:
             else:
                 print(self.username + " are removing request #" + str(parseResult[1]))
                 self.__db.DeleteReqWithId(parseResult[1])
-                self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.RemoveSuccessKey).format(parseResult[1]))
+                self.__bot.send_message(
+                    self.__chatId,
+                    ld.get_translate(self.__db, self.username, ld.RemoveSuccessKey).format(parseResult[1]),
+                )
         elif ld.ChangeKey in msg:
             parseResult = self.__ParseReqId(msg)
             if not parseResult[0]:
@@ -156,7 +206,12 @@ class UserRequestProcess:
                 self.__deleteStartMessage()
                 assets = self.__db.GetAssetsList()
                 keyboard = self.__GetMarkupForAssetList(assets, True)
-                reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.ChangingMsgKey), parse_mode="HTML", reply_markup=keyboard)
+                reply = self.__bot.send_message(
+                    self.__chatId,
+                    ld.get_translate(self.__db, self.username, ld.ChangingMsgKey),
+                    parse_mode="HTML",
+                    reply_markup=keyboard,
+                )
                 self.__processMsgId = reply.message_id
         elif msg == ld.ShowMyReqKey:
             print(self.username + " are browsing his requests")
@@ -171,7 +226,7 @@ class UserRequestProcess:
             self.__ProcessShowAll(self.__currentPage)
         elif msg == "⬅️":
             self.__currentPage -= 1
-            if (self.__currentPage < 1):
+            if self.__currentPage < 1:
                 self.__currentPage = 1
             self.__ProcessShowAll(self.__currentPage)
         elif msg == ld.VoteKey:
@@ -181,8 +236,17 @@ class UserRequestProcess:
                 return
             self.currentStep = RequestSteps.VoteUser
             keyboard = InlineKeyboardMarkup(row_width=1)
-            keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey))
-            self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.VotingMsgKey), parse_mode="HTML", reply_markup=keyboard)
+            keyboard.row(
+                InlineKeyboardButton(
+                    ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey
+                )
+            )
+            self.__bot.send_message(
+                self.__chatId,
+                ld.get_translate(self.__db, self.username, ld.VotingMsgKey),
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
         elif msg == ld.UnvoteKey:
             self.__deleteAllReqKeyboard()
             votedUsersList = self.__db.GetMyVotedUsers(self.username)
@@ -190,8 +254,12 @@ class UserRequestProcess:
                 self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.VoteListEmptyKey))
                 return
             self.currentStep = RequestSteps.UnvoteUser
-            reply = self.__bot.send_message(self.__chatId, "<b>{0}</b>".format(ld.get_translate(self.__db, self.username, ld.UnvoteKey)), 
-                parse_mode="HTML", reply_markup=self.__GetMarkupForUnvote(votedUsersList))
+            reply = self.__bot.send_message(
+                self.__chatId,
+                "<b>{0}</b>".format(ld.get_translate(self.__db, self.username, ld.UnvoteKey)),
+                parse_mode="HTML",
+                reply_markup=self.__GetMarkupForUnvote(votedUsersList),
+            )
             self.__unvoteMsgId = reply.message_id
         elif msg == ld.EscrowListKey:
             self.__deleteAllReqKeyboard()
@@ -205,14 +273,18 @@ class UserRequestProcess:
             self.__deleteAllReqKeyboard()
             print(self.username + " has been disabled notifications")
             self.__db.DeleteUserFromNotifications(self.username)
-            self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.NotificationsDisabledKey))
+            self.__bot.send_message(
+                self.__chatId, ld.get_translate(self.__db, self.username, ld.NotificationsDisabledKey)
+            )
             self.Start()
         elif msg == ld.EnableNotifKey:
             self.__deleteAllReqKeyboard()
             print(self.username + " has been enabled notifications")
             if not self.__db.IsNotificationsRowExistForUser(self.username):
                 self.__db.AddUserForNotifications(self.username, self.__chatId)
-            self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.NotificationsEnabledKey))
+            self.__bot.send_message(
+                self.__chatId, ld.get_translate(self.__db, self.username, ld.NotificationsEnabledKey)
+            )
             self.Start()
         elif msg == ld.EnglishKey:
             self.__deleteAllReqKeyboard()
@@ -227,7 +299,9 @@ class UserRequestProcess:
                 msg = msg.replace(ld.AcceptBuyRequestKey, "")
                 reqNum = int(msg.replace(ld.AcceptSellRequestKey, ""))
                 if self.__db.IsRequestProcessing(reqNum):
-                    self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.RequestAlreadyAcceptedKey))
+                    self.__bot.send_message(
+                        self.__chatId, ld.get_translate(self.__db, self.username, ld.RequestAlreadyAcceptedKey)
+                    )
                     return
                 req = self.__db.GetRawRequest(reqNum)
                 reqType = db.RequestType(req[2])
@@ -236,31 +310,52 @@ class UserRequestProcess:
                 self.__db.AddProcessingRequest(reqNum, seller, buyer)
                 reqUserChatId = self.__db.GetUserChatId(req[1])
                 keyboard = InlineKeyboardMarkup(row_width=1)
-                keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.AcceptKey), callback_data="{0}{1}".format(ld.AcceptKey, reqNum)))
-                print("{0}({1}) sent accept message to user {2}({3})".format(self.username, self.__chatId, req[1], reqUserChatId))
-                self.__bot.send_message(reqUserChatId, ld.get_translate(self.__db, req[1], ld.RequestWasAcceptedKey).format(reqNum, self.username), reply_markup=keyboard)
+                keyboard.row(
+                    InlineKeyboardButton(
+                        ld.get_translate(self.__db, self.username, ld.AcceptKey),
+                        callback_data="{0}{1}".format(ld.AcceptKey, reqNum),
+                    )
+                )
+                print(
+                    "{0}({1}) sent accept message to user {2}({3})".format(
+                        self.username, self.__chatId, req[1], reqUserChatId
+                    )
+                )
+                self.__bot.send_message(
+                    reqUserChatId,
+                    ld.get_translate(self.__db, req[1], ld.RequestWasAcceptedKey).format(reqNum, self.username),
+                    reply_markup=keyboard,
+                )
                 self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.RequestWasSentKey))
                 self.__StartRequestAcceptTimer(reqNum)
             except Exception as ex:
                 print("Exception during accepting request: " + str(ex))
 
         elif msg.startswith(ld.AcceptKey):
-            try:                
+            try:
                 print("{0} trying to accept request {1}".format(self.username, msg))
                 reqNum = int(msg.replace(ld.AcceptKey, ""))
                 processingReq = self.__db.GetProcessingRequest(reqNum)
                 if len(processingReq) == 0:
                     print("Request is no longer exists")
-                    self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.AcceptRequestNoLongerActiveKey))
+                    self.__bot.send_message(
+                        self.__chatId, ld.get_translate(self.__db, self.username, ld.AcceptRequestNoLongerActiveKey)
+                    )
                     return
                 seller = processingReq[1]
                 buyer = processingReq[2]
                 sellerChatId = self.__db.GetUserChatId(seller)
                 buyerChatId = self.__db.GetUserChatId(buyer)
                 print("Send Finish Accept message to user {0}, chatId {1}".format(seller, sellerChatId))
-                self.__bot.send_message(sellerChatId, ld.get_translate(self.__db, seller, ld.RequestHasBeenAcceptedBothSidesKey).format(reqNum, buyer))
+                self.__bot.send_message(
+                    sellerChatId,
+                    ld.get_translate(self.__db, seller, ld.RequestHasBeenAcceptedBothSidesKey).format(reqNum, buyer),
+                )
                 print("Send Finish Accept message to user {0}, chatId {1}".format(buyer, buyerChatId))
-                self.__bot.send_message(buyerChatId, ld.get_translate(self.__db, buyer, ld.RequestHasBeenAcceptedBothSidesKey).format(reqNum, seller))
+                self.__bot.send_message(
+                    buyerChatId,
+                    ld.get_translate(self.__db, buyer, ld.RequestHasBeenAcceptedBothSidesKey).format(reqNum, seller),
+                )
                 self.__DeleteProcessingRequest(reqNum)
                 self.__db.DeleteReqWithId(reqNum)
             except:
@@ -280,8 +375,12 @@ class UserRequestProcess:
         self.currentStep = RequestSteps.EnterQuantity
         self.__deleteProcessMessage()
         keyboard = InlineKeyboardMarkup(row_width=1)
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey))        
-        reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterQuantityMsgKey), reply_markup=keyboard)
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey)
+        )
+        reply = self.__bot.send_message(
+            self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterQuantityMsgKey), reply_markup=keyboard
+        )
         self.__processMsgId = reply.message_id
 
     def __ProcessEnterQuantity(self, msg: str):
@@ -297,11 +396,27 @@ class UserRequestProcess:
             self.__quantity = parsedValue
             self.currentStep = RequestSteps.EnterFeeType
             keyboard = InlineKeyboardMarkup(row_width=2)
-            keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SellerKey), callback_data=ld.SellerKey),
-                         InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.BuyerKey), callback_data=ld.BuyerKey))
-            keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.NobodyKey), callback_data=ld.NobodyKey))
-            keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey))
-            reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.SelectWhoPayFee), reply_markup=keyboard)
+            keyboard.row(
+                InlineKeyboardButton(
+                    ld.get_translate(self.__db, self.username, ld.SellerKey), callback_data=ld.SellerKey
+                ),
+                InlineKeyboardButton(
+                    ld.get_translate(self.__db, self.username, ld.BuyerKey), callback_data=ld.BuyerKey
+                ),
+            )
+            keyboard.row(
+                InlineKeyboardButton(
+                    ld.get_translate(self.__db, self.username, ld.NobodyKey), callback_data=ld.NobodyKey
+                )
+            )
+            keyboard.row(
+                InlineKeyboardButton(
+                    ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey
+                )
+            )
+            reply = self.__bot.send_message(
+                self.__chatId, ld.get_translate(self.__db, self.username, ld.SelectWhoPayFee), reply_markup=keyboard
+            )
             self.__processMsgId = reply.message_id
         except:
             self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.WrongInputKey))
@@ -317,17 +432,23 @@ class UserRequestProcess:
             self.__feeType = FeeTypes.Seller
         elif msg == ld.BuyerKey:
             self.__feeType = FeeTypes.Buyer
-        
+
         keyboard = InlineKeyboardMarkup(row_width=1)
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey))
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey)
+        )
         if self.__feeType == FeeTypes.Nobody:
             self.__fee = 0.0
             self.currentStep = RequestSteps.EnterBank
-            reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterBankNameKey), reply_markup=keyboard)
+            reply = self.__bot.send_message(
+                self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterBankNameKey), reply_markup=keyboard
+            )
             self.__processMsgId = reply.message_id
         else:
             self.currentStep = RequestSteps.EnterFee
-            reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterFeeMsgKey), reply_markup=keyboard)
+            reply = self.__bot.send_message(
+                self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterFeeMsgKey), reply_markup=keyboard
+            )
             self.__processMsgId = reply.message_id
 
     def __ProcessFee(self, msg: str):
@@ -340,8 +461,14 @@ class UserRequestProcess:
             self.__fee = float(msg)
             self.currentStep = RequestSteps.EnterBank
             keyboard = InlineKeyboardMarkup(row_width=1)
-            keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey))
-            reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterBankNameKey), reply_markup=keyboard)
+            keyboard.row(
+                InlineKeyboardButton(
+                    ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey
+                )
+            )
+            reply = self.__bot.send_message(
+                self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterBankNameKey), reply_markup=keyboard
+            )
             self.__processMsgId = reply.message_id
         except:
             self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.WrongInputKey))
@@ -358,8 +485,12 @@ class UserRequestProcess:
             return
         self.currentStep = RequestSteps.EnterEndDate
         keyboard = InlineKeyboardMarkup(row_width=1)
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey))
-        self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterReqDurationKey), reply_markup=keyboard)
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey)
+        )
+        self.__bot.send_message(
+            self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterReqDurationKey), reply_markup=keyboard
+        )
 
     def __ProcessEndDate(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
@@ -373,7 +504,16 @@ class UserRequestProcess:
             delta = timedelta(days=self.__daysQuantity, hours=0, minutes=0)
             if self.__feeType == FeeTypes.Seller and self.__fee > 0.0:
                 self.__fee = -self.__fee
-            reqId = self.__db.AddRequest(self.username, self.__reqType, self.__quantity, self.__currency, self.__bank, self.__fee, now, now + delta)
+            reqId = self.__db.AddRequest(
+                self.username,
+                self.__reqType,
+                self.__quantity,
+                self.__currency,
+                self.__bank,
+                self.__fee,
+                now,
+                now + delta,
+            )
             self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.SuccessfulRequestKey))
             self.Start()
             reqStr = self.__db.GetRequest(reqId, self.username)
@@ -398,9 +538,13 @@ class UserRequestProcess:
         self.__deleteProcessMessage()
         self.currentStep = RequestSteps.ChangeQuantity
         keyboard = InlineKeyboardMarkup(row_width=1)
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey), 
-                     InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey))
-        reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterQuantityMsgKey), reply_markup=keyboard)
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey),
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey),
+        )
+        reply = self.__bot.send_message(
+            self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterQuantityMsgKey), reply_markup=keyboard
+        )
         self.__processMsgId = reply.message_id
 
     def __ProcessChangeQuantity(self, msg: str):
@@ -422,12 +566,20 @@ class UserRequestProcess:
         self.__deleteProcessMessage()
         self.currentStep = RequestSteps.ChangeFeeType
         keyboard = InlineKeyboardMarkup(row_width=2)
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SellerKey), callback_data=ld.SellerKey),
-                     InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.BuyerKey), callback_data=ld.BuyerKey))
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.NobodyKey), callback_data=ld.NobodyKey))
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey), 
-                     InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey))
-        reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.SelectWhoPayFee), reply_markup=keyboard)
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SellerKey), callback_data=ld.SellerKey),
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.BuyerKey), callback_data=ld.BuyerKey),
+        )
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.NobodyKey), callback_data=ld.NobodyKey)
+        )
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey),
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey),
+        )
+        reply = self.__bot.send_message(
+            self.__chatId, ld.get_translate(self.__db, self.username, ld.SelectWhoPayFee), reply_markup=keyboard
+        )
         self.__processMsgId = reply.message_id
 
     def __ProcessChangeFeeType(self, msg: str):
@@ -453,9 +605,11 @@ class UserRequestProcess:
             msg = ld.get_translate(self.__db, self.username, ld.EnterBankNameKey)
         else:
             self.currentStep = RequestSteps.ChangeFee
-        
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey), 
-                     InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey))
+
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey),
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey),
+        )
         reply = self.__bot.send_message(self.__chatId, msg, reply_markup=keyboard)
         self.__processMsgId = reply.message_id
 
@@ -475,9 +629,13 @@ class UserRequestProcess:
         self.__deleteProcessMessage()
         self.currentStep = RequestSteps.ChangeBank
         keyboard = InlineKeyboardMarkup(row_width=1)
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey), 
-                     InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey))
-        reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterBankNameKey), reply_markup=keyboard)
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey),
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey),
+        )
+        reply = self.__bot.send_message(
+            self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterBankNameKey), reply_markup=keyboard
+        )
         self.__processMsgId = reply.message_id
 
     def __ProcessChangeBank(self, msg: str):
@@ -491,9 +649,13 @@ class UserRequestProcess:
 
         self.currentStep = RequestSteps.ChangeEndDate
         keyboard = InlineKeyboardMarkup(row_width=1)
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey), 
-                     InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey))
-        reply = self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterReqDurationKey), reply_markup=keyboard)
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey),
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey),
+        )
+        reply = self.__bot.send_message(
+            self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterReqDurationKey), reply_markup=keyboard
+        )
         self.__processMsgId = reply.message_id
 
     def __ProcessChangeEndDate(self, msg: str):
@@ -514,11 +676,22 @@ class UserRequestProcess:
             self.__startDate = now
             self.__endDate = now + timedelta(days=self.__daysQuantity)
         if self.__feeType >= 0:
-            if (self.__feeType == FeeTypes.Seller and self.__fee > 0.0) or (self.__feeType == FeeTypes.Buyer and self.__fee < 0.0):
+            if (self.__feeType == FeeTypes.Seller and self.__fee > 0.0) or (
+                self.__feeType == FeeTypes.Buyer and self.__fee < 0.0
+            ):
                 self.__fee = -self.__fee
             elif self.__feeType == FeeTypes.Nobody:
                 self.__fee = 0.0
-        self.__db.UpdateRequest(self.__reqIdForUpdate, self.username, self.__quantity, self.__currency, self.__bank, self.__fee, self.__startDate, self.__endDate)
+        self.__db.UpdateRequest(
+            self.__reqIdForUpdate,
+            self.username,
+            self.__quantity,
+            self.__currency,
+            self.__bank,
+            self.__fee,
+            self.__startDate,
+            self.__endDate,
+        )
         self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.SuccessfulChangeKey))
         self.Start()
         reqStr = self.__db.GetRequest(self.__reqIdForUpdate, self.username)
@@ -531,17 +704,27 @@ class UserRequestProcess:
             return
         votedUser = msg.strip('"').lstrip('@')
         if not self.__db.IsUserRegistered(votedUser):
-            self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.VotedUserNotRegisteredKey).format(votedUser))
+            self.__bot.send_message(
+                self.__chatId,
+                ld.get_translate(self.__db, self.username, ld.VotedUserNotRegisteredKey).format(votedUser),
+            )
             return
         if self.__db.IsAlreadyVotedByUser(self.username, votedUser):
-            self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.VotedUserAlreadyVotedKey).format(votedUser))
+            self.__bot.send_message(
+                self.__chatId, ld.get_translate(self.__db, self.username, ld.VotedUserAlreadyVotedKey).format(votedUser)
+            )
             return
         if self.username == votedUser:
             self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.VotedUserIsMySelfKey))
             return
         self.__db.Vote(self.username, votedUser)
         voteCount = self.__db.GetVotesCount(self.username)
-        self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.VoteSuccessfulKey).format(votedUser, db.DB.MaxVotes - voteCount))
+        self.__bot.send_message(
+            self.__chatId,
+            ld.get_translate(self.__db, self.username, ld.VoteSuccessfulKey).format(
+                votedUser, db.DB.MaxVotes - voteCount
+            ),
+        )
         self.Start()
 
     def __ProcessUnvote(self, msg: str):
@@ -554,10 +737,15 @@ class UserRequestProcess:
         self.__db.Unvote(self.username, votedUser)
         voteCount = self.__db.GetVotesCount(self.username)
         self.__bot.delete_message(self.__chatId, self.__unvoteMsgId)
-        self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.UnvoteSuccessfulKey).format(votedUser, db.DB.MaxVotes - voteCount))
+        self.__bot.send_message(
+            self.__chatId,
+            ld.get_translate(self.__db, self.username, ld.UnvoteSuccessfulKey).format(
+                votedUser, db.DB.MaxVotes - voteCount
+            ),
+        )
         self.Start()
 
-    def __SendNotifications(self, message:str):
+    def __SendNotifications(self, message: str):
         forNotif = self.__db.GetUserlistForNotifications(self.username)
         for chatId in forNotif:
             try:
@@ -567,23 +755,29 @@ class UserRequestProcess:
 
     def __GetMarkupForAssetList(self, assetsList: list, withSkipBtn: bool = False):
         assetsCount = len(assetsList)
-        rowsCount = assetsCount//5
-        if assetsCount%5 > 0:
-            rowsCount += 1        
-        keyboard = InlineKeyboardMarkup(row_width=rowsCount+1)
+        rowsCount = assetsCount // 5
+        if assetsCount % 5 > 0:
+            rowsCount += 1
+        keyboard = InlineKeyboardMarkup(row_width=rowsCount + 1)
         buttons = [InlineKeyboardButton(a, callback_data=a) for a in assetsList]
         keyboard.add(*buttons)
-        secondaryButtons = [InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey)]
+        secondaryButtons = [
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey)
+        ]
         if withSkipBtn:
-            secondaryButtons.append(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey))
+            secondaryButtons.append(
+                InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.SkipKey), callback_data=ld.SkipKey)
+            )
         keyboard.row(*secondaryButtons)
         return keyboard
 
     def __GetMarkupForUnvote(self, usernameList: list):
-        keyboard = InlineKeyboardMarkup(row_width=len(usernameList)+1)
+        keyboard = InlineKeyboardMarkup(row_width=len(usernameList) + 1)
         for username in usernameList:
             keyboard.row(InlineKeyboardButton(username, callback_data=username))
-        keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey))
+        keyboard.row(
+            InlineKeyboardButton(ld.get_translate(self.__db, self.username, ld.CancelKey), callback_data=ld.CancelKey)
+        )
         return keyboard
 
     def __ProcessShowMy(self):
@@ -596,23 +790,38 @@ class UserRequestProcess:
             idx2 = req.find(')')
             if idx1 < 0 or idx2 < 0:
                 continue
-            reqId = req[idx1:idx2+1]
+            reqId = req[idx1 : idx2 + 1]
             keyboard = InlineKeyboardMarkup(row_width=1)
-            keyboard.row(InlineKeyboardButton("{0} {1}".format(ld.get_translate(self.__db, self.username, ld.RemoveKey), reqId), callback_data="{0} {1}".format(ld.RemoveKey, reqId)), 
-                         InlineKeyboardButton("{0} {1}".format(ld.get_translate(self.__db, self.username, ld.ChangeKey), reqId), callback_data="{0} {1}".format(ld.ChangeKey, reqId)))
+            keyboard.row(
+                InlineKeyboardButton(
+                    "{0} {1}".format(ld.get_translate(self.__db, self.username, ld.RemoveKey), reqId),
+                    callback_data="{0} {1}".format(ld.RemoveKey, reqId),
+                ),
+                InlineKeyboardButton(
+                    "{0} {1}".format(ld.get_translate(self.__db, self.username, ld.ChangeKey), reqId),
+                    callback_data="{0} {1}".format(ld.ChangeKey, reqId),
+                ),
+            )
             self.__bot.send_message(self.__chatId, req, parse_mode="HTML", reply_markup=keyboard)
 
     def __ProcessShowAll(self, pageNumber: int):
         limit = 5
-        offset = limit*(pageNumber - 1)
+        offset = limit * (pageNumber - 1)
         allReqs = self.__db.GetAllRequests(self.username, offset, limit)
         if len(allReqs) == 0:
             self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.EmptyKey))
             return
         for req in allReqs:
             keyboard = InlineKeyboardMarkup(row_width=1)
-            buttonTextKey = ld.AcceptSellRequestKey if db.RequestType(req[2]) == db.RequestType.Sell else ld.AcceptBuyRequestKey
-            keyboard.row(InlineKeyboardButton(ld.get_translate(self.__db, self.username, buttonTextKey), callback_data="{0}{1}".format(buttonTextKey, req[0])))
+            buttonTextKey = (
+                ld.AcceptSellRequestKey if db.RequestType(req[2]) == db.RequestType.Sell else ld.AcceptBuyRequestKey
+            )
+            keyboard.row(
+                InlineKeyboardButton(
+                    ld.get_translate(self.__db, self.username, buttonTextKey),
+                    callback_data="{0}{1}".format(buttonTextKey, req[0]),
+                )
+            )
             formattedReq = self.__getFormattedRequest(req)
             if str(req[1]) == self.username:
                 keyboard = None
@@ -620,7 +829,7 @@ class UserRequestProcess:
             self.__allReqMsgIds.append(reply.message_id)
         reqCount = self.__db.GetAllRequestsCount()
         showPrevButton = pageNumber > 1
-        showNextButton = (reqCount - (limit + limit*(pageNumber - 1))) > 0
+        showNextButton = (reqCount - (limit + limit * (pageNumber - 1))) > 0
 
         keyboard = None
         if showNextButton or showPrevButton:
@@ -632,12 +841,14 @@ class UserRequestProcess:
                 buttons.append(KeyboardButton("➡️"))
             keyboard.add(*buttons)
             self.__isKeyboardActive = True
-        maxPageNumber = reqCount//limit
-        if reqCount%limit > 0:
+        maxPageNumber = reqCount // limit
+        if reqCount % limit > 0:
             maxPageNumber += 1
-        reply = self.__bot.send_message(self.__chatId, "Page {0} of {1}".format(pageNumber, maxPageNumber), parse_mode="HTML", reply_markup=keyboard)
+        reply = self.__bot.send_message(
+            self.__chatId, "Page {0} of {1}".format(pageNumber, maxPageNumber), parse_mode="HTML", reply_markup=keyboard
+        )
         self.__allReqMsgIds.append(reply.message_id)
-    
+
     def __getFormattedRequest(self, req: tuple):
         number = req[0]
         username = req[1]
@@ -653,7 +864,9 @@ class UserRequestProcess:
             whoPayFee = ld.get_translate(self.__db, self.username, ld.FeePayBuyerKey)
         elif float(fee) < 0:
             whoPayFee = ld.get_translate(self.__db, self.username, ld.FeePaySellerKey)
-        req = ld.get_translate(self.__db, self.username, ld.RequestResultStringTemplate).format(number, username, reqType, quantity, currency, fee, whoPayFee, bank, startDate, endDate)
+        req = ld.get_translate(self.__db, self.username, ld.RequestResultStringTemplate).format(
+            number, username, reqType, quantity, currency, fee, whoPayFee, bank, startDate, endDate
+        )
         return req
 
     def __getLocalizedRequestType(self, reqType: db.RequestType, callUser):
@@ -702,7 +915,7 @@ class UserRequestProcess:
         idx2 = msg.find(')')
         if idx1 < 0 or idx2 < 0:
             return (False, 0)
-        substr = msg[idx1 + 1:idx2]
+        substr = msg[idx1 + 1 : idx2]
         try:
             reqId = int(substr)
             return (True, reqId)
@@ -711,12 +924,14 @@ class UserRequestProcess:
 
     def __StripTagsRegex(self, source):
         import re
+
         return re.sub("<.*?>", "", source)
 
     def __GetNumberFromString(self, source):
         import re
+
         result = re.findall("([0-9]*[.,][0-9]+|[0-9]+)", source)
-        if len(result)>0:
+        if len(result) > 0:
             return result[0]
         return None
 
@@ -724,7 +939,9 @@ class UserRequestProcess:
         threading.Timer(300, lambda: self.__AutoDeleteProcessingRequest(reqId)).start()
 
     def __AutoDeleteProcessingRequest(self, reqId):
-        self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.AcceptRequestHasBeenAutoCancelledKey))
+        self.__bot.send_message(
+            self.__chatId, ld.get_translate(self.__db, self.username, ld.AcceptRequestHasBeenAutoCancelledKey)
+        )
         self.__DeleteProcessingRequest(reqId)
 
     def __DeleteProcessingRequest(self, reqId):

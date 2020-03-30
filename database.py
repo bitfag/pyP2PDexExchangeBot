@@ -1,17 +1,20 @@
 import sqlite3
+import threading
 from datetime import datetime
 from enum import IntEnum
-import localizationdic as ld
+
 import config
-import threading
+import localizationdic as ld
 
 DBFileName = "db.sqlite"
 
 lock = threading.Lock()
 
+
 class RequestType(IntEnum):
     Buy = 0
     Sell = 1
+
 
 class DB:
 
@@ -55,7 +58,7 @@ class DB:
         finally:
             lock.release()
 
-        return []        
+        return []
 
     def IsNotificationsRowExistForUser(self, username):
         try:
@@ -83,8 +86,19 @@ class DB:
         rows = self.cur.fetchall()
         return [r[0] for r in rows]
 
-    def AddRequest(self, username, reqType: RequestType, quantity, currency, bankName, fee, startDate: datetime, endDate: datetime):
-        sql = "INSERT INTO requests(username, requestType, quantity, currency, bankName, fee, startDate, endDate) VALUES(\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\")".format(username, int(reqType), quantity, currency, bankName, fee, startDate.strftime("%d.%m.%Y"), endDate.strftime("%d.%m.%Y"))
+    def AddRequest(
+        self, username, reqType: RequestType, quantity, currency, bankName, fee, startDate: datetime, endDate: datetime
+    ):
+        sql = "INSERT INTO requests(username, requestType, quantity, currency, bankName, fee, startDate, endDate) VALUES(\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\")".format(
+            username,
+            int(reqType),
+            quantity,
+            currency,
+            bankName,
+            fee,
+            startDate.strftime("%d.%m.%Y"),
+            endDate.strftime("%d.%m.%Y"),
+        )
         self.cur.execute(sql)
         self.conn.commit()
         sql = "SELECT last_insert_rowid() FROM requests"
@@ -131,7 +145,9 @@ class DB:
         self.cur.execute(sql)
         self.conn.commit()
 
-    def UpdateRequest(self, reqId, username, quantity, currency, bankName, fee, startDate: datetime, endDate: datetime = None):
+    def UpdateRequest(
+        self, reqId, username, quantity, currency, bankName, fee, startDate: datetime, endDate: datetime = None
+    ):
         if (not quantity) and (not currency) and (not bankName) and fee < 0.0 and (not endDate):
             return
         updateValues = []
@@ -202,7 +218,9 @@ class DB:
         self.conn.commit()
 
     def UpdateUser(self, username, userId):
-        sql = "UPDATE users SET userId={0}, username=\"{1}\" WHERE username=\"{1}\" OR userId={0}".format(userId, username)
+        sql = "UPDATE users SET userId={0}, username=\"{1}\" WHERE username=\"{1}\" OR userId={0}".format(
+            userId, username
+        )
         self.cur.execute(sql)
         self.conn.commit()
 
@@ -241,7 +259,9 @@ class DB:
         return result[0]
 
     def IsAlreadyVotedByUser(self, username, votedUser):
-        sql = "SELECT count(*) FROM users_votes WHERE username = \"{0}\" AND votedUser = \"{1}\"".format(username, votedUser)
+        sql = "SELECT count(*) FROM users_votes WHERE username = \"{0}\" AND votedUser = \"{1}\"".format(
+            username, votedUser
+        )
         self.cur.execute(sql)
         result = self.cur.fetchone()
         return result[0] > 0
@@ -276,7 +296,7 @@ class DB:
                 escrowDic[r[0]] += 1
             else:
                 escrowDic[r[0]] = 1
-        sortedDic = sorted(escrowDic.items(), key = lambda x: x[1], reverse = True)
+        sortedDic = sorted(escrowDic.items(), key=lambda x: x[1], reverse=True)
         return [self.EscrowListTemplate.format(v[0], v[1]) for v in sortedDic]
 
     def GetUserLanguage(self, username):
@@ -290,7 +310,9 @@ class DB:
             result2 = self.cur.fetchone()
             return int(result2[0])
         else:
-            sql = "INSERT INTO users_languages(username, language) VALUES(\"{0}\",\"{1}\")".format(username, int(userLang))
+            sql = "INSERT INTO users_languages(username, language) VALUES(\"{0}\",\"{1}\")".format(
+                username, int(userLang)
+            )
             self.cur.execute(sql)
             self.conn.commit()
         return userLang
@@ -318,7 +340,9 @@ class DB:
         return row[0] > 0
 
     def AddProcessingRequest(self, reqId, seller, buyer):
-        sql = "INSERT INTO processing_requests (reqId, seller, buyer) VALUES ({0},\"{1}\",\"{2}\")".format(reqId, seller, buyer)
+        sql = "INSERT INTO processing_requests (reqId, seller, buyer) VALUES ({0},\"{1}\",\"{2}\")".format(
+            reqId, seller, buyer
+        )
         self.cur.execute(sql)
         self.conn.commit()
 
@@ -392,7 +416,9 @@ class DB:
                 whoPayFee = ld.get_translate(self, callUser, ld.FeePayBuyerKey)
             elif float(fee) < 0:
                 whoPayFee = ld.get_translate(self, callUser, ld.FeePaySellerKey)
-            req = ld.get_translate(self, callUser, ld.RequestResultStringTemplate).format(number, username, reqType, quantity, currency, fee, whoPayFee, bank, startDate, endDate)
+            req = ld.get_translate(self, callUser, ld.RequestResultStringTemplate).format(
+                number, username, reqType, quantity, currency, fee, whoPayFee, bank, startDate, endDate
+            )
             results.append(req)
 
         return results
@@ -405,12 +431,12 @@ class DB:
 
     def __cleanup_db(self):
         sqls = [
-            "DELETE FROM requests WHERE username NOT IN (SELECT username FROM users)", 
+            "DELETE FROM requests WHERE username NOT IN (SELECT username FROM users)",
             "DELETE FROM notifications WHERE username NOT IN(SELECT username FROM users)",
             "DELETE FROM users_votes WHERE username NOT IN(SELECT username FROM users)",
             "DELETE FROM users_votes WHERE votedUser NOT IN(SELECT username FROM users)",
-            "DELETE FROM users_languages WHERE username NOT IN(SELECT username FROM users)"
-            ]
+            "DELETE FROM users_languages WHERE username NOT IN(SELECT username FROM users)",
+        ]
         for sql in sqls:
             self.cur.execute(sql)
         self.conn.commit()

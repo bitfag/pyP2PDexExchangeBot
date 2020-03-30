@@ -1,9 +1,12 @@
 from enum import IntEnum
+
 from database import DB
+
 
 class Languages(IntEnum):
     English = 0
     Russian = 1
+
 
 DefaultLanguage = Languages.Russian
 
@@ -98,7 +101,7 @@ _dic = [
 Select currency...""",
         BuyingMsgKey: """<b>Buying</b>
 
-Select currency...""",        
+Select currency...""",
         RemoveKey: "Remove",
         ChangeKey: "Change",
         RemoveErrorKey: "Remove error",
@@ -134,7 +137,7 @@ Enter another username""",
 Enter another username""",
         VotedUserIsMySelfKey: """You can't vote for yourself.
 Enter another username""",
-        VoteSuccessfulKey:  """You was successful voted for {0}
+        VoteSuccessfulKey: """You was successful voted for {0}
 You have {1} votes left""",
         UnvoteSuccessfulKey: """You was successful unvote for {0}
 You have {1} votes left""",
@@ -143,7 +146,7 @@ You have {1} votes left""",
         RequestResultStringTemplate: """<b>({0})</b>
 @{1} <i>wants to {2}</i> <b>{3} {4}</b>
 <b>Fee: {5}%</b>{6}
-<b>Bank</b> - {7}. 
+<b>Bank</b> - {7}.
 <b>Start:</b> {8}, <b>End:</b> {9}""",
         NextPageKey: "Next ►",
         PrevPageKey: "◄ Prev",
@@ -157,7 +160,7 @@ You have {1} votes left""",
 You can make a deal directly or using garantee.
 To view the list of garantors press click the appropriate button in start menu""",
         AcceptRequestHasBeenAutoCancelledKey: "Your accept request was auto cancelled",
-        AcceptRequestNoLongerActiveKey: "This accept request is no longer active"
+        AcceptRequestNoLongerActiveKey: "This accept request is no longer active",
     },
     {
         EnglishKey: "(EN) English",
@@ -229,7 +232,7 @@ To view the list of garantors press click the appropriate button in start menu""
         RequestResultStringTemplate: """<b>({0})</b>
 @{1} <i>хочет {2}</i> <b>{3} {4}</b>
 <b>Процент: {5}%</b>{6}
-<b>Банк</b> - {7}. 
+<b>Банк</b> - {7}.
 <b>Начало:</b> {8}, <b>Окончание:</b> {9}""",
         NextPageKey: "Дальше ►",
         PrevPageKey: "◄ Назад",
@@ -243,9 +246,10 @@ To view the list of garantors press click the appropriate button in start menu""
 Сделку можно совершить напрямую или через гаранта.
 Для просмотра списка гарантов нажмите соответствующую кнопку в стартовом меню""",
         AcceptRequestHasBeenAutoCancelledKey: "Ваш запрос был автоматически отменен",
-        AcceptRequestNoLongerActiveKey: "Этот запрос уже не активен"
-    }
+        AcceptRequestNoLongerActiveKey: "Этот запрос уже не активен",
+    },
 ]
+
 
 def get_translate(db: DB, username, key):
     lang = db.GetUserLanguage(username)
@@ -253,4 +257,3 @@ def get_translate(db: DB, username, key):
     if key in dic:
         return dic.get(key)
     return key
-    
