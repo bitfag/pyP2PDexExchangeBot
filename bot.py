@@ -1,4 +1,5 @@
-import sqlite3
+#!/usr/bin/env python
+
 import threading
 import time
 
@@ -6,7 +7,7 @@ import config
 import database
 import localizationdic as ld
 import telebot
-from telebot.types import Chat, Message
+from telebot.types import Message
 from user_request_process import RequestSteps, UserRequestProcess
 
 bot = telebot.TeleBot(config.token)
@@ -16,14 +17,14 @@ masterChatId = db.GetMasterChatId()
 masterChatAdmins = []
 userProcesses = {}
 
-'''if masterChatId != 0:
-    try:
-        masterChatAdmins = bot.get_chat_administrators(masterChatId)
-    except:
-        masterChatAdmins = []
-        masterChatId = 0
-else:
-    masterChatAdmins = []'''
+# if masterChatId != 0:
+#     try:
+#         masterChatAdmins = bot.get_chat_administrators(masterChatId)
+#     except:
+#         masterChatAdmins = []
+#         masterChatId = 0
+# else:
+#     masterChatAdmins = []
 
 
 def CleanDB():
@@ -75,7 +76,7 @@ Set 'username' first please""",
             masterChatId = message.chat.id
             masterChatAdmins = bot.get_chat_administrators(masterChatId)
             administrators = [user.user.username for user in masterChatAdmins]
-            if not message.from_user.username in administrators:
+            if message.from_user.username not in administrators:
                 masterChatId = 0
                 masterChatAdmins = []
                 return
@@ -93,7 +94,7 @@ Set 'username' first please""",
             )
             return
         administrators = [user.user.username for user in masterChatAdmins]
-        if not message.from_user.username in administrators:
+        if message.from_user.username not in administrators:
             return
         reqList = db.GetAllFormattedRequests(message.from_user.username, 0, 50)
         if len(reqList) == 0:
@@ -103,7 +104,7 @@ Set 'username' first please""",
             reqCount = len(reqList)
             while idx < reqCount:
                 count = min(10, reqCount - idx)
-                lst = reqList[idx : idx + count]
+                lst = reqList[idx : idx + count]  # noqa: E203
                 msg = "\n\n".join(lst)
                 bot.send_message(message.chat.id, msg, parse_mode="HTML")
                 idx += 10
@@ -144,7 +145,7 @@ Set 'username' first please""",
             )
             return
         administrators = [user.user.username for user in masterChatAdmins]
-        if not message.from_user.username in administrators:
+        if message.from_user.username not in administrators:
             return
         username = message.text.replace("/unregister", "").strip(' ').strip('@')
         if len(username) == 0:
@@ -178,7 +179,7 @@ Set 'username' first please""",
             )
             return
         administrators = [user.user.username for user in masterChatAdmins]
-        if not message.from_user.username in administrators:
+        if message.from_user.username not in administrators:
             return
         usersCount = db.GetUsersCount()
         usersWithNotif = db.GetUsersCountWithNotifications()
@@ -195,7 +196,7 @@ Set 'username' first please""",
             )
             return
         administrators = [user.user.username for user in masterChatAdmins]
-        if not message.from_user.username in administrators:
+        if message.from_user.username not in administrators:
             return
         reqId = message.text.replace("/blockbyreqid", "").strip(' ').strip('@')
         if len(reqId) == 0:
@@ -228,7 +229,7 @@ def handle_private_message(message: Message):
 You are in blacklist!""",
         )
         return
-    if message.from_user.username == None or len(message.from_user.username) == 0:
+    if message.from_user.username is None or len(message.from_user.username) == 0:
         bot.send_message(
             message.chat.id,
             """Вам сначала нужно установить никнейм в телеграме.
@@ -270,7 +271,7 @@ if __name__ == '__main__':
     while repeatCount > 0:
         try:
             bot.polling(none_stop=True, timeout=60)
-        except KeyboardInterrupt as ki:
+        except KeyboardInterrupt:
             repeatCount = 0
         except Exception as ex:
             print("BOTAPI exception - " + str(ex))
