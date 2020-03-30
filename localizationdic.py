@@ -1,7 +1,5 @@
 from enum import IntEnum
 
-from database import DB
-
 
 class Languages(IntEnum):
     English = 0
@@ -251,7 +249,7 @@ To view the list of garantors press click the appropriate button in start menu""
 ]
 
 
-def get_translate(db: DB, username, key):
+def get_translate(db, username, key):
     lang = db.GetUserLanguage(username)
     dic = _dic[lang]
     if key in dic:
