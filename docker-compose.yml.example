@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  bot:
+    image: vvk123/pyP2PDexExchangeBot:latest
+    build: .
+    restart: unless-stopped
+    command: ./bot.py
+    volumes:
+      - /path/to/config.py:/opt/code/config.py
+      - /path/to/database:/opt/code/database
