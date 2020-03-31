@@ -7,9 +7,11 @@ import config
 import database
 import localizationdic as ld
 import telebot
+from telebot import apihelper
 from telebot.types import Message
 from user_request_process import RequestSteps, UserRequestProcess
 
+apihelper.proxy = config.proxy
 bot = telebot.TeleBot(config.token)
 db = database.DB()
 
