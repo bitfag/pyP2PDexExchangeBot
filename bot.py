@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import logging
 import threading
 import time
 
@@ -10,6 +11,16 @@ import telebot
 from telebot import apihelper
 from telebot.types import Message
 from user_request_process import RequestSteps, UserRequestProcess
+
+logger = telebot.logger
+telebot.logger.setLevel(logging.INFO)
+
+log = logging.getLogger('bot')
+formatter = logging.Formatter("%(asctime)s %(levelname)s %(funcName)s(%(lineno)d): %(message)s")
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+log.addHandler(handler)
+log.setLevel(logging.DEBUG)
 
 apihelper.proxy = config.proxy
 bot = telebot.TeleBot(config.token)
@@ -31,7 +42,7 @@ userProcesses = {}
 
 def clean_db():
     while True:
-        print("DB cleaning")
+        log.info("DB cleaning")
         db.DeleteOldRequests()
         time.sleep(86400)
 
@@ -55,7 +66,7 @@ def handle_callback_query(call):
     try:
         bot.answer_callback_query(call.id)
     except Exception as ex:
-        print("Exception during request {0} from {1}. Message: {2}".format(data, username, str(ex)))
+        log.info("Exception during request {0} from {1}. Message: {2}".format(data, username, str(ex)))
 
 
 def handle_group_message(message: Message):
@@ -83,7 +94,7 @@ Set 'username' first please""",
                 masterChatId = 0
                 masterChatAdmins = []
                 return
-        print(message.from_user.username + " has been set masterchat")
+        log.info(message.from_user.username + " has been set masterchat")
         db.SetMasterChatId(masterChatId)
         bot.send_message(masterChatId, "Done")
     elif message.text.startswith("/list"):

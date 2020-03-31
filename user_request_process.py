@@ -1,5 +1,5 @@
+import logging
 import threading
-import time
 from datetime import datetime, timedelta
 from enum import IntEnum
 
@@ -13,6 +13,8 @@ from telebot.types import (
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
 )
+
+log = logging.getLogger('bot')
 
 
 class RequestSteps(IntEnum):
@@ -144,7 +146,7 @@ class UserRequestProcess:
     def __ProcessStartState(self, msg: str):
         self.__deleteAllReqMessages()
         if msg == ld.SellKey:
-            print(self.username + " Sell")
+            log.info(self.username + " Sell")
             self.__deleteAllReqKeyboard()
             self.__reqType = db.RequestType.Sell
             self.currentStep = RequestSteps.EnterCurrency
@@ -159,7 +161,7 @@ class UserRequestProcess:
             )
             self.__processMsgId = reply.message_id
         elif msg == ld.BuyKey:
-            print(self.username + " Buy")
+            log.info(self.username + " Buy")
             self.__deleteAllReqKeyboard()
             self.__reqType = db.RequestType.Buy
             self.currentStep = RequestSteps.EnterCurrency
@@ -179,7 +181,7 @@ class UserRequestProcess:
                 self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.RemoveErrorKey))
                 return
             else:
-                print(self.username + " are removing request #" + str(parseResult[1]))
+                log.info(self.username + " are removing request #" + str(parseResult[1]))
                 self.__db.DeleteReqWithId(parseResult[1])
                 self.__bot.send_message(
                     self.__chatId,
@@ -191,7 +193,7 @@ class UserRequestProcess:
                 self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.ChangeErrorKey))
                 return
             else:
-                print(self.username + " are changing request #" + str(parseResult[1]))
+                log.info(self.username + " are changing request #" + str(parseResult[1]))
                 self.currentStep = RequestSteps.ChangeCurrency
                 self.__reqIdForUpdate = parseResult[1]
                 req = self.__db.GetRawRequest(parseResult[1])
@@ -214,11 +216,11 @@ class UserRequestProcess:
                 )
                 self.__processMsgId = reply.message_id
         elif msg == ld.ShowMyReqKey:
-            print(self.username + " are browsing his requests")
+            log.info(self.username + " are browsing his requests")
             self.__deleteAllReqKeyboard()
             self.__ProcessShowMy()
         elif msg == ld.ShowAllReqKey:
-            print(self.username + " are browsing all requests")
+            log.info(self.username + " are browsing all requests")
             self.__currentPage = 1
             self.__ProcessShowAll(self.__currentPage)
         elif msg == "➡️":
@@ -271,7 +273,7 @@ class UserRequestProcess:
             self.__bot.send_message(self.__chatId, result, parse_mode="HTML")
         elif msg == ld.DisableNotifKey:
             self.__deleteAllReqKeyboard()
-            print(self.username + " has been disabled notifications")
+            log.info(self.username + " has been disabled notifications")
             self.__db.DeleteUserFromNotifications(self.username)
             self.__bot.send_message(
                 self.__chatId, ld.get_translate(self.__db, self.username, ld.NotificationsDisabledKey)
@@ -279,7 +281,7 @@ class UserRequestProcess:
             self.Start()
         elif msg == ld.EnableNotifKey:
             self.__deleteAllReqKeyboard()
-            print(self.username + " has been enabled notifications")
+            log.info(self.username + " has been enabled notifications")
             if not self.__db.IsNotificationsRowExistForUser(self.username):
                 self.__db.AddUserForNotifications(self.username, self.__chatId)
             self.__bot.send_message(
@@ -316,7 +318,7 @@ class UserRequestProcess:
                         callback_data="{0}{1}".format(ld.AcceptKey, reqNum),
                     )
                 )
-                print(
+                log.info(
                     "{0}({1}) sent accept message to user {2}({3})".format(
                         self.username, self.__chatId, req[1], reqUserChatId
                     )
@@ -329,15 +331,15 @@ class UserRequestProcess:
                 self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.RequestWasSentKey))
                 self.__StartRequestAcceptTimer(reqNum)
             except Exception as ex:
-                print("Exception during accepting request: " + str(ex))
+                log.info("Exception during accepting request: " + str(ex))
 
         elif msg.startswith(ld.AcceptKey):
             try:
-                print("{0} trying to accept request {1}".format(self.username, msg))
+                log.info("{0} trying to accept request {1}".format(self.username, msg))
                 reqNum = int(msg.replace(ld.AcceptKey, ""))
                 processingReq = self.__db.GetProcessingRequest(reqNum)
                 if len(processingReq) == 0:
-                    print("Request is no longer exists")
+                    log.info("Request is no longer exists")
                     self.__bot.send_message(
                         self.__chatId, ld.get_translate(self.__db, self.username, ld.AcceptRequestNoLongerActiveKey)
                     )
@@ -346,12 +348,12 @@ class UserRequestProcess:
                 buyer = processingReq[2]
                 sellerChatId = self.__db.GetUserChatId(seller)
                 buyerChatId = self.__db.GetUserChatId(buyer)
-                print("Send Finish Accept message to user {0}, chatId {1}".format(seller, sellerChatId))
+                log.info("Send Finish Accept message to user {0}, chatId {1}".format(seller, sellerChatId))
                 self.__bot.send_message(
                     sellerChatId,
                     ld.get_translate(self.__db, seller, ld.RequestHasBeenAcceptedBothSidesKey).format(reqNum, buyer),
                 )
-                print("Send Finish Accept message to user {0}, chatId {1}".format(buyer, buyerChatId))
+                log.info("Send Finish Accept message to user {0}, chatId {1}".format(buyer, buyerChatId))
                 self.__bot.send_message(
                     buyerChatId,
                     ld.get_translate(self.__db, buyer, ld.RequestHasBeenAcceptedBothSidesKey).format(reqNum, seller),
@@ -359,11 +361,11 @@ class UserRequestProcess:
                 self.__DeleteProcessingRequest(reqNum)
                 self.__db.DeleteReqWithId(reqNum)
             except:
-                print("Exception during accepting request")
+                log.info("Exception during accepting request")
 
     def __ProcessEnterCurrency(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -385,7 +387,7 @@ class UserRequestProcess:
 
     def __ProcessEnterQuantity(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -423,7 +425,7 @@ class UserRequestProcess:
 
     def __ProcessFeeType(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -453,7 +455,7 @@ class UserRequestProcess:
 
     def __ProcessFee(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -475,7 +477,7 @@ class UserRequestProcess:
 
     def __ProcessBank(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -494,7 +496,7 @@ class UserRequestProcess:
 
     def __ProcessEndDate(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -519,12 +521,12 @@ class UserRequestProcess:
             reqStr = self.__db.GetRequest(reqId, self.username)
             self.__SendNotifications(ld.get_translate(self.__db, self.username, ld.NewReqNotifKey).format(reqStr))
         except Exception as ex:
-            print(ex)
+            log.info(ex)
             self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.WrongInputKey))
 
     def __ProcessChangeCurrency(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled changing request process")
+            log.info(self.username + " has been cancelled changing request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -549,7 +551,7 @@ class UserRequestProcess:
 
     def __ProcessChangeQuantity(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled changing request process")
+            log.info(self.username + " has been cancelled changing request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -584,7 +586,7 @@ class UserRequestProcess:
 
     def __ProcessChangeFeeType(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled changing request process")
+            log.info(self.username + " has been cancelled changing request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -615,7 +617,7 @@ class UserRequestProcess:
 
     def __ProcessChangeFee(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled changing request process")
+            log.info(self.username + " has been cancelled changing request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -640,7 +642,7 @@ class UserRequestProcess:
 
     def __ProcessChangeBank(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled changing request process")
+            log.info(self.username + " has been cancelled changing request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -660,7 +662,7 @@ class UserRequestProcess:
 
     def __ProcessChangeEndDate(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled changing request process")
+            log.info(self.username + " has been cancelled changing request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -699,7 +701,7 @@ class UserRequestProcess:
 
     def __ProcessVote(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled {0} process".format(self.currentStep.name))
+            log.info(self.username + " has been cancelled {0} process".format(self.currentStep.name))
             self.Start()
             return
         votedUser = msg.strip('"').lstrip('@')
@@ -729,7 +731,7 @@ class UserRequestProcess:
 
     def __ProcessUnvote(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            print(self.username + " has been cancelled {0} process".format(self.currentStep.name))
+            log.info(self.username + " has been cancelled {0} process".format(self.currentStep.name))
             self.__bot.delete_message(self.__chatId, self.__unvoteMsgId)
             self.Start()
             return
@@ -751,7 +753,7 @@ class UserRequestProcess:
             try:
                 self.__bot.send_message(chatId, message, parse_mode="HTML")
             except Exception as ex:
-                print("Exception during send notification: " + str(ex))
+                log.info("Exception during send notification: " + str(ex))
 
     def __GetMarkupForAssetList(self, assetsList: list, withSkipBtn: bool = False):
         assetsCount = len(assetsList)
@@ -881,7 +883,7 @@ class UserRequestProcess:
                 self.__bot.delete_message(self.__chatId, self.__processMsgId)
                 self.__processMsgId = -1
             except Exception as ex:
-                print("Exception during delete process message. Error: " + str(ex))
+                log.info("Exception during delete process message. Error: " + str(ex))
 
     def __deleteStartMessage(self):
         if self.__startMsgId > 0:
@@ -889,7 +891,7 @@ class UserRequestProcess:
                 self.__bot.delete_message(self.__chatId, self.__startMsgId)
                 self.__startMsgId = -1
             except Exception as ex:
-                print("Exception during delete start message. Error: " + str(ex))
+                log.info("Exception during delete start message. Error: " + str(ex))
 
     def __deleteAllReqMessages(self):
         if len(self.__allReqMsgIds) > 0:
@@ -897,7 +899,7 @@ class UserRequestProcess:
                 try:
                     self.__bot.delete_message(self.__chatId, msgId)
                 except Exception as ex:
-                    print("Exception during delete all requests message. Error: " + str(ex))
+                    log.info("Exception during delete all requests message. Error: " + str(ex))
             self.__allReqMsgIds.clear()
 
     def __deleteAllReqKeyboard(self):
@@ -908,7 +910,7 @@ class UserRequestProcess:
             self.__bot.send_message(self.__chatId, "❌", reply_markup=deleteMarkup)
             self.__isKeyboardActive = False
         except:
-            print("Exception during remove keyboard.")
+            log.info("Exception during remove keyboard.")
 
     def __ParseReqId(self, msg: str):
         idx1 = msg.find('(')
@@ -945,5 +947,5 @@ class UserRequestProcess:
         self.__DeleteProcessingRequest(reqId)
 
     def __DeleteProcessingRequest(self, reqId):
-        print("Processing request #{0} was deleted".format(reqId))
+        log.info("Processing request #{0} was deleted".format(reqId))
         self.__db.DeleteProcessingRequest(reqId)
