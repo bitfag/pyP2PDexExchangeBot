@@ -12,7 +12,6 @@ repos:
   - id: check-json
   - id: check-yaml
   - id: end-of-file-fixer
-  - id: flake8
 
 - repo: https://gitlab.com/pycqa/flake8
   rev: 3.7.9
