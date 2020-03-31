@@ -29,10 +29,11 @@ userProcesses = {}
 #     masterChatAdmins = []
 
 
-def CleanDB():
-    print("DB cleaning")
-    db.DeleteOldRequests()
-    threading.Timer(86400, CleanDB).start()
+def clean_db():
+    while True:
+        print("DB cleaning")
+        db.DeleteOldRequests()
+        time.sleep(86400)
 
 
 @bot.message_handler(content_types=["text"])
@@ -268,19 +269,6 @@ You need to set your username in Telegram first.""",
 
 
 if __name__ == '__main__':
-    CleanDB()
-    repeatCount = 50
-    while repeatCount > 0:
-        try:
-            bot.polling(none_stop=True, timeout=60)
-        except KeyboardInterrupt:
-            repeatCount = 0
-        except Exception as ex:
-            print("BOTAPI exception - " + str(ex))
-        repeatCount -= 1
-        try:
-            print("REPEAT in 10 secs bot.polling")
-            time.sleep(10)
-        except KeyboardInterrupt:
-            print("Trying to stop bot.polling...")
-            repeatCount = 0
+    cleaner = threading.Thread(target=clean_db, daemon=True)
+    cleaner.start()
+    bot.polling(none_stop=True, timeout=60)
