@@ -360,7 +360,7 @@ class UserRequestProcess:
                 )
                 self.__DeleteProcessingRequest(reqNum)
                 self.__db.DeleteReqWithId(reqNum)
-            except:
+            except Exception:
                 log.info("Exception during accepting request")
 
     def __ProcessEnterCurrency(self, msg: str):
@@ -420,7 +420,7 @@ class UserRequestProcess:
                 self.__chatId, ld.get_translate(self.__db, self.username, ld.SelectWhoPayFee), reply_markup=keyboard
             )
             self.__processMsgId = reply.message_id
-        except:
+        except Exception:
             self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.WrongInputKey))
 
     def __ProcessFeeType(self, msg: str):
@@ -472,7 +472,7 @@ class UserRequestProcess:
                 self.__chatId, ld.get_translate(self.__db, self.username, ld.EnterBankNameKey), reply_markup=keyboard
             )
             self.__processMsgId = reply.message_id
-        except:
+        except Exception:
             self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.WrongInputKey))
 
     def __ProcessBank(self, msg: str):
@@ -561,7 +561,7 @@ class UserRequestProcess:
                 if not parsedValue:
                     raise Exception("Parsing error!")
                 self.__quantity = parsedValue
-            except:
+            except Exception:
                 self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.WrongInputKey))
                 return
 
@@ -624,7 +624,7 @@ class UserRequestProcess:
         if not (msg == ld.SkipKey):
             try:
                 self.__fee = float(msg)
-            except:
+            except Exception:
                 self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.WrongInputKey))
                 return
 
@@ -669,7 +669,7 @@ class UserRequestProcess:
         if not (msg == ld.SkipKey):
             try:
                 self.__daysQuantity = int(msg)
-            except:
+            except Exception:
                 self.__daysQuantity = -1
 
         self.__deleteProcessMessage()
@@ -792,7 +792,7 @@ class UserRequestProcess:
             idx2 = req.find(')')
             if idx1 < 0 or idx2 < 0:
                 continue
-            reqId = req[idx1 : idx2 + 1]
+            reqId = req[idx1 : idx2 + 1]  # noqa: E203
             keyboard = InlineKeyboardMarkup(row_width=1)
             keyboard.row(
                 InlineKeyboardButton(
@@ -909,7 +909,7 @@ class UserRequestProcess:
             deleteMarkup = ReplyKeyboardRemove()
             self.__bot.send_message(self.__chatId, "❌", reply_markup=deleteMarkup)
             self.__isKeyboardActive = False
-        except:
+        except Exception:
             log.info("Exception during remove keyboard.")
 
     def __ParseReqId(self, msg: str):
@@ -917,11 +917,11 @@ class UserRequestProcess:
         idx2 = msg.find(')')
         if idx1 < 0 or idx2 < 0:
             return (False, 0)
-        substr = msg[idx1 + 1 : idx2]
+        substr = msg[idx1 + 1 : idx2]  # noqa: E203
         try:
             reqId = int(substr)
             return (True, reqId)
-        except:
+        except Exception:
             return (False, 0)
 
     def __StripTagsRegex(self, source):
