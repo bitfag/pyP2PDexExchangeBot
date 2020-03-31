@@ -23,4 +23,5 @@ assets = [
     ('PPY',),
 ]
 
-proxy = {'https': 'http://192.168.0.1:3128'}
+# proxy = {'https': 'http://192.168.0.1:3128'}
+proxy = {}
