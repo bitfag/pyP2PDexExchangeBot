@@ -2,7 +2,7 @@ version: '2'
 
 services:
   bot:
-    image: vvk123/pyP2PDexExchangeBot:latest
+    image: vvk123/p2pdexexchangebot:latest
     build: .
     restart: unless-stopped
     command: ./bot.py
