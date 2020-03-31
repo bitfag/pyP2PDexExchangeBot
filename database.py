@@ -6,7 +6,7 @@ from enum import IntEnum
 import config
 import localizationdic as ld
 
-DBFileName = "db.sqlite"
+DBFileName = "database/db.sqlite"
 
 lock = threading.Lock()
 
