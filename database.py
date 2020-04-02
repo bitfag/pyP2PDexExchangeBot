@@ -24,7 +24,9 @@ class DB:
     def __init__(self):
         self.conn = sqlite3.connect(DBFileName, check_same_thread=False)
         self.cur = self.conn.cursor()
-        sql = """CREATE TABLE IF NOT EXISTS requests (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, requestType INTEGER, quantity INTEGER, currency TEXT, bankName TEXT, fee REAL, startDate TEXT, endDate TEXT);
+        sql = """CREATE TABLE IF NOT EXISTS requests (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT,
+                    requestType INTEGER, quantity INTEGER, currency TEXT, bankName TEXT, fee REAL,
+                    startDate TEXT, endDate TEXT);
                  CREATE TABLE IF NOT EXISTS notifications (username TEXT, chatId INTEGER);
                  CREATE TABLE IF NOT EXISTS masterchat (chatId INTEGER);
                  CREATE TABLE IF NOT EXISTS users (username TEXT);
@@ -89,15 +91,18 @@ class DB:
     def AddRequest(
         self, username, reqType: RequestType, quantity, currency, bankName, fee, startDate: datetime, endDate: datetime
     ):
-        sql = "INSERT INTO requests(username, requestType, quantity, currency, bankName, fee, startDate, endDate) VALUES(\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\")".format(
-            username,
-            int(reqType),
-            quantity,
-            currency,
-            bankName,
-            fee,
-            startDate.strftime("%d.%m.%Y"),
-            endDate.strftime("%d.%m.%Y"),
+        sql = (
+            "INSERT INTO requests(username, requestType, quantity, currency, bankName, fee, startDate, endDate) "
+            "VALUES(\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\")".format(
+                username,
+                int(reqType),
+                quantity,
+                currency,
+                bankName,
+                fee,
+                startDate.strftime("%d.%m.%Y"),
+                endDate.strftime("%d.%m.%Y"),
+            )
         )
         self.cur.execute(sql)
         self.conn.commit()
@@ -234,7 +239,7 @@ class DB:
         sql = "SELECT userId FROM users WHERE username = \"{0}\"".format(username)
         self.cur.execute(sql)
         result = self.cur.fetchone()
-        if result != None and result[0] != None:
+        if result is not None and result[0] is not None:
             userId = int(result[0])
             if userId != 0:
                 sql = "INSERT OR IGNORE INTO users_blacklist(userId) VALUES({0})".format(userId)
