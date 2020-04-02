@@ -4,12 +4,13 @@ import logging
 import threading
 import time
 
-import config
-import database
-import localizationdic as ld
 import telebot
 from telebot import apihelper
 from telebot.types import Message
+
+import config
+import database
+import localizationdic as ld
 from user_request_process import RequestSteps, UserRequestProcess
 
 logger = telebot.logger
@@ -250,12 +251,11 @@ You are in blacklist!""",
 You need to set your username in Telegram first.""",
         )
         return
-    if not db.IsUserRegistered(message.from_user.username):
-        bot.send_message(
-            message.chat.id, ld.get_translate(db, message.from_user.username, ld.PleaseRegisterGroupChatKey)
-        )
-        return
+
     username = message.from_user.username
+    if not db.IsUserRegistered(username):
+        db.AddUser(username)
+
     db.SetUserChatId(username, message.chat.id)
     db.UpdateUser(username, message.from_user.id)
     if message.text.startswith("/start"):

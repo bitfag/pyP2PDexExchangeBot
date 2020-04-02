@@ -212,8 +212,8 @@ class DB:
         sql = "SELECT count(*) FROM users WHERE username=\"{}\"".format(username)
         self.cur.execute(sql)
         result = self.cur.fetchone()
-        if result[0] == 0:
-            self.AddUser(username)
+        if not result[0]:
+            return False
         return True
 
     @db_lock
