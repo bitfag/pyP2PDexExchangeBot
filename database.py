@@ -2,6 +2,7 @@ import sqlite3
 import threading
 from datetime import datetime
 from enum import IntEnum
+from functools import wraps
 
 import config
 import localizationdic as ld
@@ -9,6 +10,15 @@ import localizationdic as ld
 DBFileName = "database/db.sqlite"
 
 lock = threading.Lock()
+
+
+def db_lock(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        with lock:
+            return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class RequestType(IntEnum):
@@ -42,52 +52,48 @@ class DB:
         self.__BlacklistMigration()
         self.__cleanup_db()
 
+    @db_lock
     def GetAssetsList(self):
-        try:
-            lock.acquire(True)
-            sql = "SELECT * FROM assets"
-            self.cur.execute(sql)
-            rows = self.cur.fetchall()
-            assetsList = [r[0] for r in rows]
+        sql = "SELECT * FROM assets"
+        self.cur.execute(sql)
+        rows = self.cur.fetchall()
+        assetsList = [r[0] for r in rows]
 
-            sql = "SELECT * FROM additional_assets"
-            self.cur.execute(sql)
-            rows = self.cur.fetchall()
-            addAssetsList = [r[0] for r in rows]
+        sql = "SELECT * FROM additional_assets"
+        self.cur.execute(sql)
+        rows = self.cur.fetchall()
+        addAssetsList = [r[0] for r in rows]
 
-            assetsList.extend(addAssetsList)
-            return assetsList
-        finally:
-            lock.release()
+        assetsList.extend(addAssetsList)
+        return assetsList
 
-        return []
-
+    @db_lock
     def IsNotificationsRowExistForUser(self, username):
-        try:
-            lock.acquire(True)
-            sql = "SELECT count(*) FROM notifications WHERE username=\"{}\"".format(username)
-            self.cur.execute(sql)
-            count = self.cur.fetchone()
-        finally:
-            lock.release()
-            return count[0] > 0
+        sql = "SELECT count(*) FROM notifications WHERE username=\"{}\"".format(username)
+        self.cur.execute(sql)
+        count = self.cur.fetchone()
+        return count[0] > 0
 
+    @db_lock
     def AddUserForNotifications(self, username, chatId):
         sql = "INSERT INTO notifications(username, chatId) VALUES(\"{0}\",\"{1}\")".format(username, chatId)
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def DeleteUserFromNotifications(self, username):
         sql = "DELETE FROM notifications WHERE username=\"{0}\"".format(username)
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def GetUserlistForNotifications(self, excludeUser):
         sql = "SELECT chatId FROM notifications WHERE username != \"{0}\"".format(excludeUser)
         self.cur.execute(sql)
         rows = self.cur.fetchall()
         return [r[0] for r in rows]
 
+    @db_lock
     def AddRequest(
         self, username, reqType: RequestType, quantity, currency, bankName, fee, startDate: datetime, endDate: datetime
     ):
@@ -111,6 +117,7 @@ class DB:
         rowId = self.cur.fetchone()
         return int(rowId[0])
 
+    @db_lock
     def GetRequest(self, reqId, callUser):
         sql = "SELECT * FROM requests WHERE id=" + str(reqId)
         results = self.__getResultsForSql(sql, callUser)
@@ -118,38 +125,45 @@ class DB:
             return results[0]
         return None
 
+    @db_lock
     def GetRawRequest(self, reqId):
         sql = "SELECT * FROM requests WHERE id=" + str(reqId)
         self.cur.execute(sql)
         rows = self.cur.fetchall()
         return tuple(rows[0])
 
+    @db_lock
     def GetRequestsFor(self, username, callUser):
         sql = "SELECT * FROM requests WHERE username = \"{0}\"".format(username)
         results = self.__getResultsForSql(sql, callUser)
         return results
 
+    @db_lock
     def GetAllRequestsCount(self):
         sql = "SELECT count(*) FROM requests"
         self.cur.execute(sql)
         row = self.cur.fetchone()
         return int(row[0])
 
+    @db_lock
     def GetAllRequests(self, callUser, offset: int, limit: int):
         sql = "SELECT * FROM requests ORDER BY id DESC LIMIT {0}, {1}".format(offset, limit)
         self.cur.execute(sql)
         rows = self.cur.fetchall()
         return [tuple(r) for r in rows]
 
+    @db_lock
     def GetAllFormattedRequests(self, callUser, offset: int, limit: int):
         sql = "SELECT * FROM requests LIMIT {0}, {1}".format(offset, limit)
         return self.__getResultsForSql(sql, callUser)
 
+    @db_lock
     def DeleteReqWithId(self, reqId):
         sql = "DELETE FROM requests WHERE id={0}".format(reqId)
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def UpdateRequest(
         self, reqId, username, quantity, currency, bankName, fee, startDate: datetime, endDate: datetime = None
     ):
@@ -167,6 +181,7 @@ class DB:
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def DeleteOldRequests(self):
         sql = "SELECT id, endDate FROM requests"
         self.cur.execute(sql)
@@ -177,6 +192,7 @@ class DB:
             self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def GetMasterChatId(self):
         sql = "SELECT chatId FROM masterchat"
         self.cur.execute(sql)
@@ -185,28 +201,28 @@ class DB:
             return int(result[0])
         return 0
 
+    @db_lock
     def SetMasterChatId(self, chatId):
         sql = "INSERT INTO masterchat(chatId) VALUES({})".format(chatId)
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def IsUserRegistered(self, username):
-        try:
-            lock.acquire(True)
-            sql = "SELECT count(*) FROM users WHERE username=\"{}\"".format(username)
-            self.cur.execute(sql)
-            result = self.cur.fetchone()
-        finally:
-            lock.release()
-            if result[0] == 0:
-                self.AddUser(username)
-            return True
+        sql = "SELECT count(*) FROM users WHERE username=\"{}\"".format(username)
+        self.cur.execute(sql)
+        result = self.cur.fetchone()
+        if result[0] == 0:
+            self.AddUser(username)
+        return True
 
+    @db_lock
     def AddUser(self, username):
         sql = "INSERT INTO users(username) VALUES(\"{}\")".format(username)
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def DeleteUser(self, username):
         sql = "DELETE FROM users WHERE username=\"{}\"".format(username)
         self.cur.execute(sql)
@@ -222,6 +238,7 @@ class DB:
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def UpdateUser(self, username, userId):
         sql = "UPDATE users SET userId={0}, username=\"{1}\" WHERE username=\"{1}\" OR userId={0}".format(
             userId, username
@@ -229,6 +246,7 @@ class DB:
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def AddUserToBlackListByReqId(self, reqId: int):
         sql = "SELECT username FROM requests WHERE id={0}".format(reqId)
         self.cur.execute(sql)
@@ -247,22 +265,21 @@ class DB:
         self.conn.commit()
         self.DeleteUser(username)
 
+    @db_lock
     def IsUserInBlacklist(self, userId):
-        try:
-            lock.acquire(True)
-            sql = "SELECT count(*) FROM users_blacklist WHERE userId={0}".format(userId)
-            self.cur.execute(sql)
-            count = self.cur.fetchone()
-        finally:
-            lock.release()
-            return count[0] > 0
+        sql = "SELECT count(*) FROM users_blacklist WHERE userId={0}".format(userId)
+        self.cur.execute(sql)
+        count = self.cur.fetchone()
+        return count[0] > 0
 
+    @db_lock
     def GetVotesCount(self, username):
         sql = "SELECT count(*) FROM users_votes WHERE username = \"{}\"".format(username)
         self.cur.execute(sql)
         result = self.cur.fetchone()
         return result[0]
 
+    @db_lock
     def IsAlreadyVotedByUser(self, username, votedUser):
         sql = "SELECT count(*) FROM users_votes WHERE username = \"{0}\" AND votedUser = \"{1}\"".format(
             username, votedUser
@@ -271,6 +288,7 @@ class DB:
         result = self.cur.fetchone()
         return result[0] > 0
 
+    @db_lock
     def Vote(self, username, votedUser):
         if not self.IsUserRegistered(username) or self.IsAlreadyVotedByUser(username, votedUser):
             return False
@@ -279,11 +297,13 @@ class DB:
         self.conn.commit()
         return True
 
+    @db_lock
     def Unvote(self, username, votedUser):
         sql = "DELETE FROM users_votes WHERE username = \"{0}\" AND votedUser = \"{1}\"".format(username, votedUser)
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def GetMyVotedUsers(self, username):
         sql = "SELECT votedUser FROM users_votes WHERE username = \"{}\"".format(username)
         self.cur.execute(sql)
@@ -291,6 +311,7 @@ class DB:
         usersList = [r[0] for r in result]
         return usersList
 
+    @db_lock
     def GetEscrowList(self):
         sql = "SELECT votedUser FROM users_votes"
         self.cur.execute(sql)
@@ -304,6 +325,7 @@ class DB:
         sortedDic = sorted(escrowDic.items(), key=lambda x: x[1], reverse=True)
         return [self.EscrowListTemplate.format(v[0], v[1]) for v in sortedDic]
 
+    @db_lock
     def GetUserLanguage(self, username):
         sql = "SELECT count(*) FROM users_languages WHERE username=\"{}\"".format(username)
         self.cur.execute(sql)
@@ -322,28 +344,33 @@ class DB:
             self.conn.commit()
         return userLang
 
+    @db_lock
     def SetUserLanguage(self, username, language):
         sql = "UPDATE users_languages SET language=\"{0}\" WHERE username=\"{1}\"".format(int(language), username)
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def SetUserChatId(self, username, chatId):
         sql = "UPDATE users SET chatId={0} WHERE username=\"{1}\"".format(chatId, username)
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def GetUserChatId(self, username):
         sql = "SELECT chatId FROM users WHERE username=\"{0}\"".format(username)
         self.cur.execute(sql)
         row = self.cur.fetchone()
         return row[0]
 
+    @db_lock
     def IsRequestProcessing(self, reqId):
         sql = "SELECT count(*) FROM processing_requests WHERE reqId={0}".format(reqId)
         self.cur.execute(sql)
         row = self.cur.fetchone()
         return row[0] > 0
 
+    @db_lock
     def AddProcessingRequest(self, reqId, seller, buyer):
         sql = "INSERT INTO processing_requests (reqId, seller, buyer) VALUES ({0},\"{1}\",\"{2}\")".format(
             reqId, seller, buyer
@@ -351,6 +378,7 @@ class DB:
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def GetProcessingRequest(self, reqId):
         sql = "SELECT * FROM processing_requests WHERE reqId={0}".format(reqId)
         self.cur.execute(sql)
@@ -359,17 +387,20 @@ class DB:
             return tuple(rows[0])
         return tuple()
 
+    @db_lock
     def DeleteProcessingRequest(self, reqId):
         sql = "DELETE FROM processing_requests WHERE reqId={0}".format(reqId)
         self.cur.execute(sql)
         self.conn.commit()
 
+    @db_lock
     def GetUsersCount(self):
         sql = "SELECT count(*) FROM users"
         self.cur.execute(sql)
         row = self.cur.fetchone()
         return row[0]
 
+    @db_lock
     def GetUsersCountWithNotifications(self):
         sql = "SELECT count(*) FROM notifications"
         self.cur.execute(sql)
