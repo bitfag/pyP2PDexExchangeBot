@@ -3,8 +3,6 @@ import threading
 from datetime import datetime, timedelta
 from enum import IntEnum
 
-import database as db
-import localizationdic as ld
 import telebot
 from telebot.types import (
     InlineKeyboardButton,
@@ -13,6 +11,9 @@ from telebot.types import (
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
 )
+
+import database as db
+import localizationdic as ld
 
 log = logging.getLogger('bot')
 
@@ -273,7 +274,7 @@ class UserRequestProcess:
             self.__bot.send_message(self.__chatId, result, parse_mode="HTML")
         elif msg == ld.DisableNotifKey:
             self.__deleteAllReqKeyboard()
-            log.info(self.username + " has been disabled notifications")
+            log.info(self.username + " disabled notifications")
             self.__db.DeleteUserFromNotifications(self.username)
             self.__bot.send_message(
                 self.__chatId, ld.get_translate(self.__db, self.username, ld.NotificationsDisabledKey)
@@ -281,7 +282,7 @@ class UserRequestProcess:
             self.Start()
         elif msg == ld.EnableNotifKey:
             self.__deleteAllReqKeyboard()
-            log.info(self.username + " has been enabled notifications")
+            log.info(self.username + " enabled notifications")
             if not self.__db.IsNotificationsRowExistForUser(self.username):
                 self.__db.AddUserForNotifications(self.username, self.__chatId)
             self.__bot.send_message(
@@ -365,7 +366,7 @@ class UserRequestProcess:
 
     def __ProcessEnterCurrency(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -387,7 +388,7 @@ class UserRequestProcess:
 
     def __ProcessEnterQuantity(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -425,7 +426,7 @@ class UserRequestProcess:
 
     def __ProcessFeeType(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -455,7 +456,7 @@ class UserRequestProcess:
 
     def __ProcessFee(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -477,7 +478,7 @@ class UserRequestProcess:
 
     def __ProcessBank(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -496,7 +497,7 @@ class UserRequestProcess:
 
     def __ProcessEndDate(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled {0} process".format(self.__reqType.name))
+            log.info(self.username + " cancelled {0} process".format(self.__reqType.name))
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -526,7 +527,7 @@ class UserRequestProcess:
 
     def __ProcessChangeCurrency(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled changing request process")
+            log.info(self.username + " cancelled changing of request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -551,7 +552,7 @@ class UserRequestProcess:
 
     def __ProcessChangeQuantity(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled changing request process")
+            log.info(self.username + " cancelled changing of request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -586,7 +587,7 @@ class UserRequestProcess:
 
     def __ProcessChangeFeeType(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled changing request process")
+            log.info(self.username + " cancelled changing of request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -617,7 +618,7 @@ class UserRequestProcess:
 
     def __ProcessChangeFee(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled changing request process")
+            log.info(self.username + " cancelled changing of request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -642,7 +643,7 @@ class UserRequestProcess:
 
     def __ProcessChangeBank(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled changing request process")
+            log.info(self.username + " cancelled changing of request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -662,7 +663,7 @@ class UserRequestProcess:
 
     def __ProcessChangeEndDate(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled changing request process")
+            log.info(self.username + " cancelled changing of request process")
             self.__deleteProcessMessage()
             self.Start()
             return
@@ -701,7 +702,7 @@ class UserRequestProcess:
 
     def __ProcessVote(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled {0} process".format(self.currentStep.name))
+            log.info(self.username + " cancelled {0} process".format(self.currentStep.name))
             self.Start()
             return
         votedUser = msg.strip('"').lstrip('@')
@@ -731,7 +732,7 @@ class UserRequestProcess:
 
     def __ProcessUnvote(self, msg: str):
         if msg == ld.CancelKey or msg == "/start":
-            log.info(self.username + " has been cancelled {0} process".format(self.currentStep.name))
+            log.info(self.username + " cancelled {0} process".format(self.currentStep.name))
             self.__bot.delete_message(self.__chatId, self.__unvoteMsgId)
             self.Start()
             return
