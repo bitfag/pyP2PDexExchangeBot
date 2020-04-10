@@ -250,7 +250,7 @@ To view the list of garantors press click the appropriate button in start menu""
 
 
 def get_translate(db, username, key):
-    lang = db.GetUserLanguage(username)
+    lang = db._GetUserLanguage(username)
     dic = _dic[lang]
     if key in dic:
         return dic.get(key)

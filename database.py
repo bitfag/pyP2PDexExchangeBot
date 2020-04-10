@@ -326,25 +326,6 @@ class DB:
         return [self.EscrowListTemplate.format(v[0], v[1]) for v in sortedDic]
 
     @db_lock
-    def GetUserLanguage(self, username):
-        sql = "SELECT count(*) FROM users_languages WHERE username=\"{}\"".format(username)
-        self.cur.execute(sql)
-        result = self.cur.fetchone()
-        userLang = ld.DefaultLanguage
-        if result[0] > 0:
-            sql = "SELECT language FROM users_languages WHERE username = \"{}\"".format(username)
-            self.cur.execute(sql)
-            result2 = self.cur.fetchone()
-            return int(result2[0])
-        else:
-            sql = "INSERT INTO users_languages(username, language) VALUES(\"{0}\",\"{1}\")".format(
-                username, int(userLang)
-            )
-            self.cur.execute(sql)
-            self.conn.commit()
-        return userLang
-
-    @db_lock
     def SetUserLanguage(self, username, language):
         sql = "UPDATE users_languages SET language=\"{0}\" WHERE username=\"{1}\"".format(int(language), username)
         self.cur.execute(sql)
@@ -476,3 +457,21 @@ class DB:
         for sql in sqls:
             self.cur.execute(sql)
         self.conn.commit()
+
+    def _GetUserLanguage(self, username):
+        sql = "SELECT count(*) FROM users_languages WHERE username=\"{}\"".format(username)
+        self.cur.execute(sql)
+        result = self.cur.fetchone()
+        userLang = ld.DefaultLanguage
+        if result[0] > 0:
+            sql = "SELECT language FROM users_languages WHERE username = \"{}\"".format(username)
+            self.cur.execute(sql)
+            result2 = self.cur.fetchone()
+            return int(result2[0])
+        else:
+            sql = "INSERT INTO users_languages(username, language) VALUES(\"{0}\",\"{1}\")".format(
+                username, int(userLang)
+            )
+            self.cur.execute(sql)
+            self.conn.commit()
+        return userLang
