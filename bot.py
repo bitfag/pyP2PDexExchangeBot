@@ -60,6 +60,7 @@ def handle_messages(message: Message):
 def handle_callback_query(call):
     data = call.data
     username = call.from_user.username
+    log.info('callback query from %s: %s', username, data)
     if not (username in userProcesses):
         userProcesses[username] = UserRequestProcess(bot, db, username, call.message.chat.id)
 
@@ -95,7 +96,7 @@ Set 'username' first please""",
                 masterChatId = 0
                 masterChatAdmins = []
                 return
-        log.info(message.from_user.username + " has been set masterchat")
+        log.info("setting masterchat by %s request", message.from_user.username)
         db.SetMasterChatId(masterChatId)
         bot.send_message(masterChatId, "Done")
     elif message.text.startswith("/list"):
@@ -141,6 +142,7 @@ Set 'username' first please""",
                 ),
             )
             return
+        log.info('Registering %s', message.from_user.username)
         db.AddUser(message.from_user.username)
         bot.send_message(
             message.chat.id,
@@ -237,6 +239,7 @@ Please, enter command as <b>/blockbyreqid 'req id'</b>""",
 
 
 def handle_private_message(message: Message):
+    log.info('private message from %s: %s', message.from_user.username, message.text)
     if db.IsUserInBlacklist(message.from_user.id):
         bot.send_message(
             message.chat.id,
