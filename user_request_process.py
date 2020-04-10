@@ -182,7 +182,7 @@ class UserRequestProcess:
                 self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.RemoveErrorKey))
                 return
             else:
-                log.info(self.username + " are removing request #" + str(parseResult[1]))
+                log.info(self.username + " removing request #" + str(parseResult[1]))
                 self.__db.DeleteReqWithId(parseResult[1])
                 self.__bot.send_message(
                     self.__chatId,
@@ -194,7 +194,7 @@ class UserRequestProcess:
                 self.__bot.send_message(self.__chatId, ld.get_translate(self.__db, self.username, ld.ChangeErrorKey))
                 return
             else:
-                log.info(self.username + " are changing request #" + str(parseResult[1]))
+                log.info(self.username + " changing request #" + str(parseResult[1]))
                 self.currentStep = RequestSteps.ChangeCurrency
                 self.__reqIdForUpdate = parseResult[1]
                 req = self.__db.GetRawRequest(parseResult[1])
@@ -217,11 +217,11 @@ class UserRequestProcess:
                 )
                 self.__processMsgId = reply.message_id
         elif msg == ld.ShowMyReqKey:
-            log.info(self.username + " are browsing his requests")
+            log.info(self.username + " browsing his requests")
             self.__deleteAllReqKeyboard()
             self.__ProcessShowMy()
         elif msg == ld.ShowAllReqKey:
-            log.info(self.username + " are browsing all requests")
+            log.info(self.username + " browsing all requests")
             self.__currentPage = 1
             self.__ProcessShowAll(self.__currentPage)
         elif msg == "➡️":
