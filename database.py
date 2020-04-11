@@ -9,7 +9,7 @@ import localizationdic as ld
 
 DBFileName = "database/db.sqlite"
 
-lock = threading.Lock()
+lock = threading.RLock()
 
 
 def db_lock(func):
